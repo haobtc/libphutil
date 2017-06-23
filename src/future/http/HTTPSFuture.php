@@ -9,6 +9,8 @@ final class HTTPSFuture extends BaseHTTPFuture {
   private static $results = array();
   private static $pool = array();
   private static $globalCABundle;
+  private static $globalUserCert;
+  private static $globalUserKey;
 
   private $handle;
   private $profilerCallID;
@@ -60,6 +62,70 @@ final class HTTPSFuture extends BaseHTTPFuture {
    */
   public function getCABundle() {
     return $this->cabundle;
+  }
+
+  /**
+   * Set the global user certificate if one is not specified
+   * for the session, given a path.
+   *
+   * @param string The path to a valid user SSL certificate
+   * @return void
+   */
+  public static function setGlobalUserCertFromPath($path) {
+    self::$globalUserCert = $path;
+  }
+  /**
+   * Set the global user certificate if one is not specified
+   * for the session, given a string.
+   *
+   * @param string The certificate
+   * @return void
+   */
+  public static function setGlobalUserCertFromString($certificate) {
+    $temp = new TempFile();
+    Filesystem::writeFile($temp, $certificate);
+    self::$globalUserCert = $temp;
+  }
+
+  /**
+   * Get the global user SSL certificate
+   *
+   * @return string
+   */
+  public static function getGlobalUserCert() {
+    return self::$globalUserCert;
+  }
+
+  /**
+   * Set the global user key if one is not specified
+   * for the session, given a path.
+   *
+   * @param string The path to a valid user SSL Key 
+   * @return void
+   */
+  public static function setGlobalUserKeyFromPath($path) {
+    self::$globalUserKey = $path;
+  }
+  /**
+   * Set the global user key if one is not specified
+   * for the session, given a string.
+   *
+   * @param string The key 
+   * @return void
+   */
+  public static function setGlobalUserKeyFromString($key) {
+    $temp = new TempFile();
+    Filesystem::writeFile($temp, $key);
+    self::$globalUserKey = $temp;
+  }
+
+  /**
+   * Get the global user SSL key 
+   *
+   * @return string
+   */
+  public static function getGlobalUserKey() {
+    return self::$globalUserKey;
   }
 
   /**
@@ -337,6 +403,11 @@ final class HTTPSFuture extends BaseHTTPFuture {
 
       if ($this->canSetCAInfo()) {
         curl_setopt($curl, CURLOPT_CAINFO, $this->getCABundle());
+      }
+
+      if (self::getGlobalUserCert()) {
+        curl_setopt($curl, CURLOPT_SSLCERT, self::getGlobalUserCert());
+        curl_setopt($curl, CURLOPT_SSLKEY, self::getGlobalUserKey());
       }
 
       $verify_peer = 1;
